@@ -19,7 +19,7 @@
 // get port from query string
 const urlParams = new URLSearchParams(window.location.search);
 
-const host = window.location.host;
+const host = window.location.hostname;
 
 const url = urlParams.get("ws") || `ws://${host}:13254`;
 
