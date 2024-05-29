@@ -1,0 +1,2 @@
+pyserial~=3.5
+websocket-server~=0.6.4
