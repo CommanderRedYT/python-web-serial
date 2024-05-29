@@ -85,11 +85,9 @@ def main():
         try:
             parsed = json.loads(message)
 
-            print(parsed)
-
             if parsed['type'] == 'reboot' and parsed['port'] in connected_ports:
                 print("Rebooting")
-                _server.send_message_to_all({'type': 'rebooting'})
+                _server.send_message_to_all(json.dumps({'type': 'rebooting', "port": parsed['port']}))
                 ser = get_serial(parsed['port'])
                 reset_esp32(ser)
                 _server.send_message_to_all(json.dumps({"type": "reboot_done", "port": parsed['port']}))

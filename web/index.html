@@ -32,6 +32,10 @@ const globalMsgs = document.getElementById('globalMsgs');
 let available = [];
 let connected = [];
 
+const autoscrollID = (port) => {
+    return 'autoscroll' + port.replace(/[\W_]+/g, '_');
+};
+
 const appendMsg = (msg, port, classes) => {
     const msgs = port ? document.querySelector(`[data-port="${port}"] > .log`) : globalMsgs;
 
@@ -55,7 +59,11 @@ const appendMsg = (msg, port, classes) => {
     msgs.appendChild(el);
 
     if (port && msgs) {
-        msgs.scrollTop = msgs.scrollHeight;
+        const autoscrollInput = document.querySelector(`#${autoscrollID(port)}`);
+
+        if (autoscrollInput && autoscrollInput.checked) {
+            msgs.scrollTop = msgs.scrollHeight;
+        }
     }
 };
 
@@ -65,6 +73,14 @@ const appendDivider = (port) => {
     const divider = document.createElement('div');
     divider.classList.add('msg-divider');
     msgs.append(divider);
+
+    if (port && msgs) {
+        const autoscrollInput = document.querySelector(`#${autoscrollID(port)}`);
+
+        if (autoscrollInput && autoscrollInput.checked) {
+            msgs.scrollTop = msgs.scrollHeight;
+        }
+    }
 }
 
 const open_port = (port, baud=115200) => {
@@ -157,6 +173,23 @@ const render_available = (available) => {
         clearButton.onclick = () => clear(port);
         buttons.append(clearButton);
 
+        const autoscrollEnable = document.createElement('div');
+        autoscrollEnable.classList.add('form-check');
+
+        const autoscrollInput = document.createElement('input');
+        autoscrollInput.type = 'checkbox';
+        autoscrollInput.classList.add('form-check-input');
+        autoscrollInput.id = autoscrollID(port);
+        autoscrollEnable.append(autoscrollInput);
+
+        const autoscrollLabel = document.createElement('label');
+        autoscrollLabel.htmlFor = autoscrollInput.id;
+        autoscrollLabel.classList.add('form-check-label');
+        autoscrollLabel.textContent = 'Enable autoscroll';
+        autoscrollEnable.append(autoscrollLabel);
+
+        buttons.append(autoscrollEnable);
+
         const status = document.createElement('span');
         status.classList.add('status', 'badge', 'rounded-pill', 'text-bg-primary');
         status.textContent = 'Unknown';
@@ -248,8 +281,12 @@ ws.onmessage = (event) => {
             }
             break;
         }
-        case 'reboot_done': {
+        case 'rebooting': {
             appendDivider(data.port);
+            appendMsg('rebooting', data.port, 'console-font');
+            break;
+        }
+        case 'reboot_done': {
             appendMsg('reboot_done', data.port, 'console-font');
             break;
         }
