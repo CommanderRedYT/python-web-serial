@@ -19,7 +19,9 @@
 // get port from query string
 const urlParams = new URLSearchParams(window.location.search);
 
-const url = urlParams.get("ws") || "ws://localhost:13254";
+const host = window.location.host;
+
+const url = urlParams.get("ws") || `ws://${host}:13254`;
 
 const ws = new WebSocket(url);
 
