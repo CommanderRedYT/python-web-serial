@@ -35,7 +35,7 @@ let connected = [];
 const appendMsg = (msg, port, classes) => {
     const msgs = port ? document.querySelector(`[data-port="${port}"] > .log`) : globalMsgs;
 
-    const time = new Date().toISOString();
+    const time = new Date().toLocaleTimeString('de-AT');
     const el = document.createElement("div");
 
     el.classList.add("msg");
@@ -44,6 +44,7 @@ const appendMsg = (msg, port, classes) => {
     el.setAttribute('data-time', time);
 
     const timeEl = document.createElement("span");
+    timeEl.classList.add('msg-time');
     timeEl.textContent = time;
     el.appendChild(timeEl);
     
@@ -100,6 +101,14 @@ const reboot = (port) => {
     }));
 };
 
+const clear = (port) => {
+    const msgs = port ? document.querySelector(`[data-port="${port}"] > .log`) : globalMsgs;
+    msgs.innerHTML = '';
+
+    appendDivider(port);
+    appendMsg('Cleared log', port, 'console-font');
+};
+
 setInterval(() => {
     list_connected();
 }, 500);
@@ -120,23 +129,33 @@ const render_available = (available) => {
         title.textContent = port;
         header.append(title);
 
+        const buttons = document.createElement('div');
+        buttons.classList.add('header-buttons');
+        header.append(buttons);
+
         const openButton = document.createElement('button');
         openButton.classList.add('btn', 'btn-primary');
         openButton.textContent = 'Open Port';
         openButton.onclick = () => open_port(port);
-        header.append(openButton);
+        buttons.append(openButton);
 
         const closeButton = document.createElement('button');
         closeButton.classList.add('btn', 'btn-primary');
         closeButton.textContent = 'Close Port';
         closeButton.onclick = () => close_port(port);
-        header.append(closeButton);
+        buttons.append(closeButton);
 
         const rebootButton = document.createElement('button');
         rebootButton.classList.add('btn', 'btn-danger');
         rebootButton.textContent = 'Reboot';
         rebootButton.onclick = () => reboot(port);
-        header.append(rebootButton);
+        buttons.append(rebootButton);
+
+        const clearButton = document.createElement('button');
+        clearButton.classList.add('btn', 'btn-secondary');
+        clearButton.textContent = 'Clear';
+        clearButton.onclick = () => clear(port);
+        buttons.append(clearButton);
 
         const status = document.createElement('span');
         status.classList.add('status', 'badge', 'rounded-pill', 'text-bg-primary');
@@ -255,34 +274,39 @@ html, body {
 }
 
 .msg {
-    margin: 5px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #303030;
+    gap: 4px;
+    font-family: 'Courier New', monospace;
+}
+
+.msg-time {
+    border-right: 2px solid #707070;
+    padding-right: 2px;
 }
 
 #clients {
     margin-bottom: 36px;
 }
 
-.console-font {
-    font-family: 'Courier New', monospace;
-}
-
 .msg-divider {
-    margin: 5px;
+    margin: 0 5px;
     border-bottom: 3px #000 ridge;
 }
 
 .log {
-    height: 300px;
+    height: 600px;
     max-height: 1000px;
     overflow-y: auto;
     resize: both;
     background-color: black;
     color: white;
     border-radius: 8px;
+}
+
+.header-buttons {
+    display: flex;
+    gap: 4px;
 }
 </style>
 </html>
