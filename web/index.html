@@ -145,6 +145,40 @@ const render_available = (available) => {
         log.classList.add('log');
         el.append(log);
 
+        // create bootstrap input field with send button for sending messages through the serial monitorfo
+        const inputGroup = document.createElement('div');
+        inputGroup.classList.add('input-group', 'mb-3');
+        el.append(inputGroup);
+
+        const input = document.createElement('input');
+
+        const sendMsg = () => {
+            const msg = input.value;
+            ws.send(JSON.stringify({
+                port,
+                type: 'sendmsg',
+                msg,
+            }));
+            input.value = '';
+        };
+
+        input.classList.add('form-control');
+        input.setAttribute('type', 'text');
+        input.setAttribute('placeholder', 'Message');
+        input.onkeydown = (e) => {
+            if (e.key === 'Enter') {
+                sendMsg();
+            }
+        };
+        inputGroup.append(input);
+
+        const sendButton = document.createElement('button');
+        sendButton.classList.add('btn', 'btn-primary');
+        sendButton.textContent = 'Send';
+        sendButton.onclick = sendMsg;
+
+        inputGroup.append(sendButton);
+
         clients.append(el);
     }
 };

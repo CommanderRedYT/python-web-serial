@@ -10,8 +10,8 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 
 class SignalingHTTPServer(HTTPServer):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self, *_args, **kwargs) -> None:
+        super().__init__(*_args, **kwargs)
         self.ready_event = threading.Event()
 
     def service_actions(self):
@@ -19,8 +19,8 @@ class SignalingHTTPServer(HTTPServer):
 
 
 class Handler(SimpleHTTPRequestHandler):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, directory='web', **kwargs)
+    def __init__(self, *_args, **kwargs) -> None:
+        super().__init__(*_args, directory='web', **kwargs)
 
 
 arg_parser = argparse.ArgumentParser(description="Serial port reader",
@@ -41,37 +41,38 @@ def main():
     available_ports = find_serial_ports()
     connected_serials: list[Serial] = []
 
-    def reset_esp32(s):
-        s.reset_input_buffer()
-        s.dtr = True
-        s.rts = False
+    def reset_esp32(ser):
+        ser.reset_input_buffer()
+        ser.dtr = True
+        ser.rts = False
         time.sleep(0.1)
-        s.dtr = False
-        s.rts = True
+        ser.dtr = False
+        ser.rts = True
         time.sleep(0.1)
-        s.dtr = True
+        ser.dtr = True
 
     def get_serial(port: str) -> Serial | None:
-        for s in connected_serials:
-            if s.is_open and s.port == port:
-                return s
+        for ser in connected_serials:
+            if ser.is_open and ser.port == port:
+                return ser
         return None
 
     def list_connected_ports():
         return json.dumps({
             "type": "list_connected",
-            "ports": [s.port for s in connected_serials]
+            "ports": [ser.port for ser in connected_serials]
         })
 
     def list_available_ports():
-        connected_ports = list_connected_ports()
+        available_ports = find_serial_ports()
+        connected_ports = [ser.port for ser in connected_serials]
 
         return json.dumps({
             "type": "list_available",
             "ports": [{'port': p, 'connected': p in connected_ports} for p in available_ports]
         })
 
-    def new_client(client, _server):
+    def new_client(_client, _server):
         _server.send_message_to_all(list_available_ports())
 
     def message_received(client, _server, message):
@@ -80,10 +81,6 @@ def main():
         def success(t):
             t = t + '_response'
             _server.send_message(client, json.dumps({'success': True, 'type': t}))
-
-        def failure(t, _message=None):
-            t = t + '_response'
-            _server.send_message(client, json.dumps({'success': False, 'type': t, message: _message}))
 
         try:
             parsed = json.loads(message)
@@ -96,11 +93,14 @@ def main():
                 ser = get_serial(parsed['port'])
                 reset_esp32(ser)
                 _server.send_message_to_all(json.dumps({"type": "reboot_done", "port": parsed['port']}))
-            elif parsed['type'] == 'sendmsg' and parsed['msg'] != '' and parsed['port'] in connected_ports:
+            elif parsed['type'] == 'sendmsg' and parsed['port'] in connected_ports:
                 msg = parsed['msg']
                 print(f"Sending message to device: {msg}")
                 ser = get_serial(parsed['port'])
-                ser.write(msg.encode())
+                if msg:
+                    ser.write(msg.encode())
+                else:
+                    ser.write('\r\n'.encode())
                 success(parsed['type'])
             elif parsed['type'] == 'connect' and parsed['baud'] != '' and parsed['port'] in available_ports:
                 if parsed['port'] not in connected_ports:
